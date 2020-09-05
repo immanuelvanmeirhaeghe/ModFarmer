@@ -19,7 +19,7 @@ namespace ModFarmer
 
         private bool showUI = false;
 
-        public Rect ModFarmerScreeen = new Rect(10f, 680f, 450f, 150f);
+        public Rect ModFarmerScreen = new Rect(1000f, 1000f, 450f, 150f);
 
         private static ItemsManager itemsManager;
         private static HUDManager hUDManager;
@@ -132,7 +132,7 @@ namespace ModFarmer
         private void InitWindow()
         {
             int wid = GetHashCode();
-            ModFarmerScreeen = GUILayout.Window(wid, ModFarmerScreeen, InitModFarmerScreen, $"{ModName}", GUI.skin.window);
+            ModFarmerScreen = GUILayout.Window(wid, ModFarmerScreen, InitModFarmerScreen, $"{ModName}", GUI.skin.window);
         }
 
         private void InitData()
@@ -164,7 +164,7 @@ namespace ModFarmer
 
                 using (var horizontalScope = new GUILayout.HorizontalScope("packBox"))
                 {
-                    GUILayout.Label("All farmer stuff, coca, ficus", GUI.skin.label);
+                    GUILayout.Label("Farmer stuff, coca, ficus", GUI.skin.label);
                     m_CountStack = GUILayout.TextField(m_CountStack, GUI.skin.textField, GUILayout.MaxWidth(50f));
                     if (GUILayout.Button("Get pack", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
                     {
