@@ -130,7 +130,8 @@ namespace ModFarmer
 
         private void InitWindow()
         {
-            ModFarmerWindow = GUI.Window(0, ModFarmerWindow, InitModWindow, $"{nameof(ModFarmer)}", GUI.skin.window);
+            int wid = GetHashCode();
+            ModFarmerWindow = GUI.Window(wid, ModFarmerWindow, InitModWindow, $"{nameof(ModFarmer)}", GUI.skin.window);
         }
 
         private void InitData()
