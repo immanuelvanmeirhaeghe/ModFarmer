@@ -1,0 +1,10 @@
+<Mod ID="ModFarmer">
+  <Compatible>1.8.1</Compatible>
+  <Name>
+    <EN>ModFarmer</EN>
+  </Name>
+  <Description>
+    <EN>ModFarmer is a mod for Green Hell that allows a player to get farming stuff.</EN>
+  </Description>
+  <Version>1.0.1.0</Version>
+</Mod>
