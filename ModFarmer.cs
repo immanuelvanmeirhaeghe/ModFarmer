@@ -6,19 +6,20 @@ using UnityEngine;
 
 namespace ModFarmer
 {
+    /// <summary>
+    /// ModFarmer is a mod for Green Hell
+    /// that allows a player to get farming and some special food items.
+    /// Enable the mod UI by pressing Home.
+    /// </summary>
     public class ModFarmer : MonoBehaviour
     {
-        /// <summary>
-        /// ModFarmer is a mod for Green Hell
-        /// that allows a player to spawn charcoal, stones, obsidian, iron and gold sacks.
-        /// The ores will be added to the player inventory.
-        /// Enable the mod UI by pressing Home.
-        /// </summary>
         private static ModFarmer s_Instance;
+
+        private static readonly string ModName = nameof(ModFarmer);
 
         private bool showUI = false;
 
-        public Rect ModFarmerWindow = new Rect(10f, 680f, 450f, 150f);
+        public Rect ModFarmerScreeen = new Rect(10f, 680f, 450f, 150f);
 
         private static ItemsManager itemsManager;
         private static HUDManager hUDManager;
@@ -131,7 +132,7 @@ namespace ModFarmer
         private void InitWindow()
         {
             int wid = GetHashCode();
-            ModFarmerWindow = GUI.Window(wid, ModFarmerWindow, InitModWindow, $"{nameof(ModFarmer)}", GUI.skin.window);
+            ModFarmerScreeen = GUILayout.Window(wid, ModFarmerScreeen, InitModFarmerScreen, $"{ModName}", GUI.skin.window);
         }
 
         private void InitData()
@@ -152,62 +153,82 @@ namespace ModFarmer
             EnableCursor(false);
         }
 
-        private void InitModWindow(int windowId)
+        private void InitModFarmerScreen(int windowID)
         {
-            if (GUI.Button(new Rect(910f, 680f, 20f, 20f), "X", GUI.skin.button))
+            using (var verticalScope = new GUILayout.VerticalScope($"{ModName}box"))
             {
-                CloseWindow();
-            }
+                if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
+                {
+                    CloseWindow();
+                }
 
-            GUI.Label(new Rect(500f, 700f, 200f, 20f), "All farmer stuff, coca, ficus", GUI.skin.label);
-            m_CountStack = GUI.TextField(new Rect(700f, 700f, 20f, 20f), m_CountStack, GUI.skin.textField);
-            if (GUI.Button(new Rect(720f, 700f, 150f, 20f), "Get pack", GUI.skin.button))
-            {
-                OnClickGetPackButton();
-                CloseWindow();
-            }
+                using (var horizontalScope = new GUILayout.HorizontalScope("packBox"))
+                {
+                    GUILayout.Label("All farmer stuff, coca, ficus", GUI.skin.label);
+                    m_CountStack = GUILayout.TextField(m_CountStack, GUI.skin.textField, GUILayout.MaxWidth(50f));
+                    if (GUILayout.Button("Get pack", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
+                    {
+                        OnClickGetPackButton();
+                        CloseWindow();
+                    }
+                }
 
-            GUI.Label(new Rect(500f, 720f, 200f, 20f), "How many seeds: ", GUI.skin.label);
-            m_CountSeeds = GUI.TextField(new Rect(700f, 720f, 20f, 20f), m_CountSeeds, GUI.skin.textField);
-            if (GUI.Button(new Rect(720f, 720f, 150f, 20f), "Get seeds", GUI.skin.button))
-            {
-                OnClickGetSeedsButton();
-                CloseWindow();
-            }
+                using (var horizontalScope = new GUILayout.HorizontalScope("seedsBox"))
+                {
+                    GUILayout.Label("How many seeds: ", GUI.skin.label);
+                    m_CountSeeds = GUILayout.TextField(m_CountSeeds, GUI.skin.textField, GUILayout.MaxWidth(50f));
+                    if (GUILayout.Button("Get seeds", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
+                    {
+                        OnClickGetSeedsButton();
+                        CloseWindow();
+                    }
+                }
 
-            GUI.Label(new Rect(500f, 740f, 200f, 20f), "How many flowers: ", GUI.skin.label);
-            m_CountFlowers = GUI.TextField(new Rect(700f, 740f, 20f, 20f), m_CountFlowers, GUI.skin.textField);
-            if (GUI.Button(new Rect(720f, 740f, 150f, 20f), "Get flowers", GUI.skin.button))
-            {
-                OnClickGetFlowersButton();
-                CloseWindow();
-            }
+                using (var horizontalScope = new GUILayout.HorizontalScope("flowersBox"))
+                {
+                    GUILayout.Label("How many flowers: ", GUI.skin.label);
+                    m_CountFlowers = GUILayout.TextField(m_CountFlowers, GUI.skin.textField, GUILayout.MaxWidth(50f));
+                    if (GUILayout.Button("Get flowers", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
+                    {
+                        OnClickGetFlowersButton();
+                        CloseWindow();
+                    }
+                }
 
-            GUI.Label(new Rect(500f, 760f, 200f, 20f), "How many nuts: ", GUI.skin.label);
-            m_CountNuts = GUI.TextField(new Rect(700f, 760f, 20f, 20f), m_CountNuts, GUI.skin.textField);
-            if (GUI.Button(new Rect(720f, 760f, 150f, 20f), "Get nuts", GUI.skin.button))
-            {
-                OnClickGetNutsButton();
-                CloseWindow();
-            }
+                using (var horizontalScope = new GUILayout.HorizontalScope("nutsBox"))
+                {
+                    GUILayout.Label("How many nuts: ", GUI.skin.label);
+                    m_CountNuts = GUILayout.TextField(m_CountNuts, GUI.skin.textField, GUILayout.MaxWidth(50f));
+                    if (GUILayout.Button("Get nuts", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
+                    {
+                        OnClickGetNutsButton();
+                        CloseWindow();
+                    }
+                }
 
-            GUI.Label(new Rect(500f, 780f, 200f, 20f), "How many droppings: ", GUI.skin.label);
-            m_CountDroppings = GUI.TextField(new Rect(700f, 780f, 20f, 20f), m_CountDroppings, GUI.skin.textField);
-            if (GUI.Button(new Rect(720f, 780f, 150f, 20f), "Get droppings", GUI.skin.button))
-            {
-                OnClickGetDroppingsButton();
-                CloseWindow();
-            }
+                using (var horizontalScope = new GUILayout.HorizontalScope("dropsBox"))
+                {
+                    GUILayout.Label("How many droppings: ", GUI.skin.label);
+                    m_CountDroppings = GUILayout.TextField(m_CountDroppings, GUI.skin.textField, GUILayout.MaxWidth(50f));
+                    if (GUILayout.Button("Get droppings", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
+                    {
+                        OnClickGetDroppingsButton();
+                        CloseWindow();
+                    }
+                }
 
-            GUI.Label(new Rect(500f, 800f, 200f, 20f), "How many shrooms: ", GUI.skin.label);
-            m_CountShrooms = GUI.TextField(new Rect(700f, 800f, 20f, 20f), m_CountShrooms, GUI.skin.textField);
-            if (GUI.Button(new Rect(720f, 800f, 150f, 20f), "Get shrooms", GUI.skin.button))
-            {
-                OnClickGetShroomsButton();
-                CloseWindow();
+                using (var horizontalScope = new GUILayout.HorizontalScope("mushBox"))
+                {
+                    GUILayout.Label("How many shrooms: ", GUI.skin.label);
+                    m_CountShrooms = GUILayout.TextField(m_CountShrooms, GUI.skin.textField, GUILayout.MaxWidth(50f));
+                    if (GUILayout.Button("Get shrooms", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
+                    {
+                        OnClickGetShroomsButton();
+                        CloseWindow();
+                    }
+                }
             }
-
-            GUI.DragWindow(new Rect(0, 0, 10000, 10000));
+            GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
         private void OnClickGetPackButton()
@@ -223,7 +244,7 @@ namespace ModFarmer
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(OnClickGetPackButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickGetPackButton)}] throws exception: {exc.Message}");
             }
         }
 
@@ -235,7 +256,7 @@ namespace ModFarmer
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(OnClickGetShroomsButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickGetShroomsButton)}] throws exception: {exc.Message}");
             }
         }
 
@@ -247,7 +268,7 @@ namespace ModFarmer
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(OnClickGetSeedsButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickGetSeedsButton)}] throws exception: {exc.Message}");
             }
         }
 
@@ -259,7 +280,7 @@ namespace ModFarmer
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(OnClickGetFlowersButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickGetFlowersButton)}] throws exception: {exc.Message}");
             }
         }
 
@@ -271,7 +292,7 @@ namespace ModFarmer
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(OnClickGetNutsButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickGetNutsButton)}] throws exception: {exc.Message}");
             }
         }
 
@@ -283,7 +304,7 @@ namespace ModFarmer
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(OnClickGetDroppingsButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickGetDroppingsButton)}] throws exception: {exc.Message}");
             }
         }
 
@@ -357,7 +378,7 @@ namespace ModFarmer
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(UnlockFarmingUtils)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(UnlockFarmingUtils)}] throws exception: {exc.Message}");
             }
         }
 
@@ -446,14 +467,14 @@ namespace ModFarmer
                 {
                     for (int i = 0; i < count; i++)
                     {
-                        Item item = itemsManager.CreateItem(extra.m_ID, true, player.transform.position + player.transform.forward * (i +  2f), player.transform.rotation);
+                        Item item = itemsManager.CreateItem(extra.m_ID, true, player.transform.position + player.transform.forward * (i + 2f), player.transform.rotation);
                     }
-                    ShowHUDBigInfo($"Spawned {count} x {extra.GetNameToDisplayLocalized()} before player", $"{nameof(ModFarmer)} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo($"Spawned {count} x {extra.GetNameToDisplayLocalized()} before player", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(AddShroomsToInventory)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(AddShroomsToInventory)}] throws exception: {exc.Message}");
             }
         }
 
@@ -468,12 +489,12 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(shroom.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {shroom.GetNameToDisplayLocalized()} to inventory", $"{nameof(ModFarmer)} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo($"Added {count} x {shroom.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(AddShroomsToInventory)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(AddShroomsToInventory)}] throws exception: {exc.Message}");
             }
         }
 
@@ -488,12 +509,12 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(dropping.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {dropping.GetNameToDisplayLocalized()} to inventory", $"{nameof(ModFarmer)} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo($"Added {count} x {dropping.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(AddDroppingsToInventory)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(AddDroppingsToInventory)}] throws exception: {exc.Message}");
             }
         }
 
@@ -508,12 +529,12 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(nut.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {nut.GetNameToDisplayLocalized()} to inventory", $"{nameof(ModFarmer)} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo($"Added {count} x {nut.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(AddNutsToInventory)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(AddNutsToInventory)}] throws exception: {exc.Message}");
             }
         }
 
@@ -528,12 +549,12 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(flower.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {flower.GetNameToDisplayLocalized()} to inventory", $"{nameof(ModFarmer)} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo($"Added {count} x {flower.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(AddFlowersToInventory)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(AddFlowersToInventory)}] throws exception: {exc.Message}");
             }
         }
 
@@ -548,12 +569,12 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(seed.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {seed.GetNameToDisplayLocalized()} to inventory", $"{nameof(ModFarmer)} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo($"Added {count} x {seed.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModFarmer)}.{nameof(ModFarmer)}:{nameof(AddSeedsToInventory)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(AddSeedsToInventory)}] throws exception: {exc.Message}");
             }
         }
     }
