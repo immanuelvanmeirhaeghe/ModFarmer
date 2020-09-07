@@ -155,14 +155,14 @@ namespace ModFarmer
 
         private void InitModFarmerScreen(int windowID)
         {
-            using (var verticalScope = new GUILayout.VerticalScope($"{ModName}box"))
+            using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
                 {
                     CloseWindow();
                 }
 
-                using (var horizontalScope = new GUILayout.HorizontalScope("packBox"))
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label("Farmer stuff, coca, ficus", GUI.skin.label);
                     m_CountStack = GUILayout.TextField(m_CountStack, GUI.skin.textField, GUILayout.MaxWidth(50f));
@@ -173,7 +173,7 @@ namespace ModFarmer
                     }
                 }
 
-                using (var horizontalScope = new GUILayout.HorizontalScope("seedsBox"))
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label("How many seeds: ", GUI.skin.label);
                     m_CountSeeds = GUILayout.TextField(m_CountSeeds, GUI.skin.textField, GUILayout.MaxWidth(50f));
@@ -184,7 +184,7 @@ namespace ModFarmer
                     }
                 }
 
-                using (var horizontalScope = new GUILayout.HorizontalScope("flowersBox"))
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label("How many flowers: ", GUI.skin.label);
                     m_CountFlowers = GUILayout.TextField(m_CountFlowers, GUI.skin.textField, GUILayout.MaxWidth(50f));
@@ -195,7 +195,7 @@ namespace ModFarmer
                     }
                 }
 
-                using (var horizontalScope = new GUILayout.HorizontalScope("nutsBox"))
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label("How many nuts: ", GUI.skin.label);
                     m_CountNuts = GUILayout.TextField(m_CountNuts, GUI.skin.textField, GUILayout.MaxWidth(50f));
@@ -206,7 +206,7 @@ namespace ModFarmer
                     }
                 }
 
-                using (var horizontalScope = new GUILayout.HorizontalScope("dropsBox"))
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label("How many droppings: ", GUI.skin.label);
                     m_CountDroppings = GUILayout.TextField(m_CountDroppings, GUI.skin.textField, GUILayout.MaxWidth(50f));
@@ -217,7 +217,7 @@ namespace ModFarmer
                     }
                 }
 
-                using (var horizontalScope = new GUILayout.HorizontalScope("mushBox"))
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label("How many shrooms: ", GUI.skin.label);
                     m_CountShrooms = GUILayout.TextField(m_CountShrooms, GUI.skin.textField, GUILayout.MaxWidth(50f));
