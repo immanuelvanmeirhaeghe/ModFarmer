@@ -17,15 +17,15 @@ namespace ModFarmer
 
         private static readonly string ModName = nameof(ModFarmer);
 
-        private bool showUI = false;
+        private bool ShowUI = false;
 
-        public Rect ModFarmerScreen = new Rect(1000f, 1000f, 450f, 150f);
+        public static Rect ModFarmerScreen = new Rect(600f, 600f, 450f, 150f);
 
         private static ItemsManager itemsManager;
         private static HUDManager hUDManager;
         private static Player player;
 
-        private static string m_CountStack = "1";
+        private static string m_CountSpecial = "1";
         private static string m_CountSeeds = "1";
         private static string m_CountFlowers = "1";
         private static string m_CountNuts = "1";
@@ -101,13 +101,13 @@ namespace ModFarmer
         {
             if (Input.GetKeyDown(KeyCode.Home))
             {
-                if (!showUI)
+                if (!ShowUI)
                 {
                     InitData();
                     EnableCursor(true);
                 }
                 ToggleShowUi();
-                if (!showUI)
+                if (!ShowUI)
                 {
                     EnableCursor(false);
                 }
@@ -116,12 +116,12 @@ namespace ModFarmer
 
         private void ToggleShowUi()
         {
-            showUI = !showUI;
+            ShowUI = !ShowUI;
         }
 
         private void OnGUI()
         {
-            if (showUI)
+            if (ShowUI)
             {
                 InitData();
                 InitSkinUI();
@@ -149,7 +149,7 @@ namespace ModFarmer
 
         private void CloseWindow()
         {
-            showUI = false;
+            ShowUI = false;
             EnableCursor(false);
         }
 
@@ -164,18 +164,18 @@ namespace ModFarmer
 
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("Farmer stuff, coca, ficus", GUI.skin.label);
-                    m_CountStack = GUILayout.TextField(m_CountStack, GUI.skin.textField, GUILayout.MaxWidth(50f));
-                    if (GUILayout.Button("Get pack", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
+                    GUILayout.Label("How many coca - and ficus leaves?: ", GUI.skin.label);
+                    m_CountSpecial = GUILayout.TextField(m_CountSpecial, GUI.skin.textField, GUILayout.MaxWidth(50f));
+                    if (GUILayout.Button("Spawn specials", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
                     {
-                        OnClickGetPackButton();
+                        OnClickSpawnSpecialsButton();
                         CloseWindow();
                     }
                 }
 
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("How many seeds: ", GUI.skin.label);
+                    GUILayout.Label("How many seeds?: ", GUI.skin.label);
                     m_CountSeeds = GUILayout.TextField(m_CountSeeds, GUI.skin.textField, GUILayout.MaxWidth(50f));
                     if (GUILayout.Button("Get seeds", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
                     {
@@ -186,7 +186,7 @@ namespace ModFarmer
 
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("How many flowers: ", GUI.skin.label);
+                    GUILayout.Label("How many flowers?: ", GUI.skin.label);
                     m_CountFlowers = GUILayout.TextField(m_CountFlowers, GUI.skin.textField, GUILayout.MaxWidth(50f));
                     if (GUILayout.Button("Get flowers", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
                     {
@@ -231,20 +231,15 @@ namespace ModFarmer
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
-        private void OnClickGetPackButton()
+        private void OnClickSpawnSpecialsButton()
         {
             try
             {
-                AddSeedsToInventory(Int32.Parse(m_CountStack));
-                AddFlowersToInventory(Int32.Parse(m_CountStack));
-                AddNutsToInventory(Int32.Parse(m_CountStack));
-                AddDroppingsToInventory(Int32.Parse(m_CountStack));
-                AddShroomsToInventory(Int32.Parse(m_CountStack));
-                SpawnCocaineAndFicusBeforePlayer(Int32.Parse(m_CountStack));
+                SpawnCocaineAndFicusBeforePlayer(Int32.Parse(m_CountSpecial));
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickGetPackButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickSpawnSpecialsButton)}] throws exception: {exc.Message}");
             }
         }
 
