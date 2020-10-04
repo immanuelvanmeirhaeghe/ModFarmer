@@ -19,7 +19,7 @@ namespace ModFarmer
 
         private bool ShowUI = false;
 
-        public static Rect ModFarmerScreen = new Rect(600f, 600f, 450f, 150f);
+        public static Rect ModFarmerScreen = new Rect(Screen.width / 2.5f, Screen.height / 2.5f, 450f, 150f);
 
         private static ItemsManager itemsManager;
         private static HUDManager hUDManager;
@@ -32,18 +32,27 @@ namespace ModFarmer
         private static string m_CountDroppings = "1";
         private static string m_CountShrooms = "1";
 
-        private bool _isActiveForMultiplayer;
-        public bool IsModActiveForMultiplayer
+        public bool IsModActiveForMultiplayer { get; private set; }
+        public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
+
+        public static string HUDBigInfoMessage(string message) => $"<color=#{ColorUtility.ToHtmlStringRGBA(Color.red)}>System</color>\n{message}";
+
+        public static string AddedToInventoryMessage(int count, ItemInfo itemInfo) => $"<color=#{ColorUtility.ToHtmlStringRGBA(Color.green)}>Added {count} x {itemInfo.GetNameToDisplayLocalized()}</color> to inventory.";
+
+        public void Start()
         {
-            get => _isActiveForMultiplayer;
-            set => _isActiveForMultiplayer = FindObjectOfType(typeof(ModManager.ModManager)) != null && ModManager.ModManager.AllowModsForMultiplayer;
+            ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
         }
 
-        private bool _isActiveForSingleplayer;
-        public bool IsModActiveForSingleplayer
+        private void ModManager_onPermissionValueChanged(bool optionValue)
         {
-            get => _isActiveForSingleplayer;
-            set => _isActiveForSingleplayer = ReplTools.AmIMaster();
+            IsModActiveForMultiplayer = optionValue;
+            ShowHUDBigInfo(
+                          (optionValue ?
+                            HUDBigInfoMessage($"<color=#{ColorUtility.ToHtmlStringRGBA(Color.green)}>Permission to use mods for multiplayer was granted!</color>")
+                            : HUDBigInfoMessage($"<color=#{ColorUtility.ToHtmlStringRGBA(Color.yellow)}>Permission to use mods for multiplayer was revoked!</color>")),
+                           $"{ModName} Info",
+                           HUDInfoLogTextureType.Count.ToString());
         }
 
         public List<ItemInfo> FarmingItemInfos = new List<ItemInfo>();
@@ -140,11 +149,7 @@ namespace ModFarmer
             itemsManager = ItemsManager.Get();
             player = Player.Get();
             hUDManager = HUDManager.Get();
-
-            if (!FarmingUnlocked)
-            {
-                UnlockFarmingUtils();
-            }
+            UnlockFarming();
         }
 
         private void CloseWindow()
@@ -166,9 +171,9 @@ namespace ModFarmer
                 {
                     GUILayout.Label("How many coca - and ficus leaves?: ", GUI.skin.label);
                     m_CountSpecial = GUILayout.TextField(m_CountSpecial, GUI.skin.textField, GUILayout.MaxWidth(50f));
-                    if (GUILayout.Button("Spawn specials", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
+                    if (GUILayout.Button("Get specials", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
                     {
-                        OnClickSpawnSpecialsButton();
+                        OnClickGetSpecialsButton();
                         CloseWindow();
                     }
                 }
@@ -197,7 +202,7 @@ namespace ModFarmer
 
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("How many nuts: ", GUI.skin.label);
+                    GUILayout.Label("How many nuts?: ", GUI.skin.label);
                     m_CountNuts = GUILayout.TextField(m_CountNuts, GUI.skin.textField, GUILayout.MaxWidth(50f));
                     if (GUILayout.Button("Get nuts", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
                     {
@@ -208,7 +213,7 @@ namespace ModFarmer
 
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("How many droppings: ", GUI.skin.label);
+                    GUILayout.Label("How many droppings?: ", GUI.skin.label);
                     m_CountDroppings = GUILayout.TextField(m_CountDroppings, GUI.skin.textField, GUILayout.MaxWidth(50f));
                     if (GUILayout.Button("Get droppings", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
                     {
@@ -219,7 +224,7 @@ namespace ModFarmer
 
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("How many shrooms: ", GUI.skin.label);
+                    GUILayout.Label("How many shrooms?: ", GUI.skin.label);
                     m_CountShrooms = GUILayout.TextField(m_CountShrooms, GUI.skin.textField, GUILayout.MaxWidth(50f));
                     if (GUILayout.Button("Get shrooms", GUI.skin.button, GUILayout.MinWidth(100f), GUILayout.MaxWidth(200f)))
                     {
@@ -231,15 +236,15 @@ namespace ModFarmer
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
-        private void OnClickSpawnSpecialsButton()
+        private void OnClickGetSpecialsButton()
         {
             try
             {
-                SpawnCocaineAndFicusBeforePlayer(Int32.Parse(m_CountSpecial));
+                AddCocaineAndFicusToInventory(Int32.Parse(m_CountSpecial));
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickSpawnSpecialsButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickGetSpecialsButton)}] throws exception: {exc.Message}");
             }
         }
 
@@ -303,77 +308,109 @@ namespace ModFarmer
             }
         }
 
-        public void UnlockFarmingUtils()
+        public void UnlockFarming()
         {
             try
             {
-                foreach (ItemInfo itemInfo in GetNutsInfos())
+                if (!FarmingUnlocked)
                 {
-                    if (!FarmingItemInfos.Contains(itemInfo))
+                    UnlockNuts();
+                    UnlockFlowers();
+                    UnlockDroppings();
+                    UnlockSeeds();
+                    UnlockShrooms();
+                    UnlockConstructions();
+                    UnlockSnowman();
+
+                    foreach (ItemInfo farmingItemInfo in FarmingItemInfos)
                     {
-                        FarmingItemInfos.Add(itemInfo);
+                        itemsManager.UnlockItemInNotepad(farmingItemInfo.m_ID);
+                        itemsManager.UnlockItemInfo(farmingItemInfo.m_ID.ToString());
                     }
-                }
 
-                foreach (ItemInfo itemInfo in GetFlowerInfos())
-                {
-                    if (!FarmingItemInfos.Contains(itemInfo))
-                    {
-                        FarmingItemInfos.Add(itemInfo);
-                    }
+                    FarmingUnlocked = true;
                 }
-
-                foreach (ItemInfo itemInfo in GetDroppingsInfos())
-                {
-                    if (!FarmingItemInfos.Contains(itemInfo))
-                    {
-                        FarmingItemInfos.Add(itemInfo);
-                    }
-                }
-
-                foreach (ItemInfo itemInfo in GetSeedInfos())
-                {
-                    if (!FarmingItemInfos.Contains(itemInfo))
-                    {
-                        FarmingItemInfos.Add(itemInfo);
-                    }
-                }
-
-                foreach (ItemInfo itemInfo in GetShroomsInfos())
-                {
-                    if (!FarmingItemInfos.Contains(itemInfo))
-                    {
-                        FarmingItemInfos.Add(itemInfo);
-                    }
-                }
-
-                foreach (ItemInfo itemInfo in GetConstructionInfos())
-                {
-                    if (!FarmingItemInfos.Contains(itemInfo))
-                    {
-                        FarmingItemInfos.Add(itemInfo);
-                    }
-                }
-
-                foreach (ItemInfo itemInfo in GetExtrasInfos())
-                {
-                    if (!FarmingItemInfos.Contains(itemInfo))
-                    {
-                        FarmingItemInfos.Add(itemInfo);
-                    }
-                }
-
-                foreach (ItemInfo farmingItemInfo in FarmingItemInfos)
-                {
-                    itemsManager.UnlockItemInNotepad(farmingItemInfo.m_ID);
-                    itemsManager.UnlockItemInfo(farmingItemInfo.m_ID.ToString());
-                }
-
-                FarmingUnlocked = true;
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(UnlockFarmingUtils)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(UnlockFarming)}] throws exception: {exc.Message}");
+            }
+        }
+
+        private void UnlockSnowman()
+        {
+            foreach (ItemInfo itemInfo in GetExtrasInfos())
+            {
+                if (!FarmingItemInfos.Contains(itemInfo))
+                {
+                    FarmingItemInfos.Add(itemInfo);
+                }
+            }
+        }
+
+        private void UnlockConstructions()
+        {
+            foreach (ItemInfo itemInfo in GetConstructionInfos())
+            {
+                if (!FarmingItemInfos.Contains(itemInfo))
+                {
+                    FarmingItemInfos.Add(itemInfo);
+                }
+            }
+        }
+
+        private void UnlockShrooms()
+        {
+            foreach (ItemInfo itemInfo in GetShroomsInfos())
+            {
+                if (!FarmingItemInfos.Contains(itemInfo))
+                {
+                    FarmingItemInfos.Add(itemInfo);
+                }
+            }
+        }
+
+        private void UnlockSeeds()
+        {
+            foreach (ItemInfo itemInfo in GetSeedInfos())
+            {
+                if (!FarmingItemInfos.Contains(itemInfo))
+                {
+                    FarmingItemInfos.Add(itemInfo);
+                }
+            }
+        }
+
+        private void UnlockDroppings()
+        {
+            foreach (ItemInfo itemInfo in GetDroppingsInfos())
+            {
+                if (!FarmingItemInfos.Contains(itemInfo))
+                {
+                    FarmingItemInfos.Add(itemInfo);
+                }
+            }
+        }
+
+        private void UnlockFlowers()
+        {
+            foreach (ItemInfo itemInfo in GetFlowerInfos())
+            {
+                if (!FarmingItemInfos.Contains(itemInfo))
+                {
+                    FarmingItemInfos.Add(itemInfo);
+                }
+            }
+        }
+
+        private void UnlockNuts()
+        {
+            foreach (ItemInfo itemInfo in GetNutsInfos())
+            {
+                if (!FarmingItemInfos.Contains(itemInfo))
+                {
+                    FarmingItemInfos.Add(itemInfo);
+                }
             }
         }
 
@@ -453,7 +490,7 @@ namespace ModFarmer
                     itemsManager.GetInfo(ItemID.Quassia_Amara_flowers_Dryed)
             };
 
-        public void SpawnCocaineAndFicusBeforePlayer(int count = 1)
+        public void AddCocaineAndFicusToInventory(int count = 1)
         {
             try
             {
@@ -462,14 +499,15 @@ namespace ModFarmer
                 {
                     for (int i = 0; i < count; i++)
                     {
-                        Item item = itemsManager.CreateItem(extra.m_ID, true, player.transform.position + player.transform.forward * (i + 2f), player.transform.rotation);
+                        // Item item = itemsManager.CreateItem(extra.m_ID, true, player.transform.position + player.transform.forward * (i + 2f), player.transform.rotation);
+                        player.AddItemToInventory(extra.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Spawned {count} x {extra.GetNameToDisplayLocalized()} before player", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo($"Added {count} x {extra.GetNameToDisplayLocalized()} to inventory.", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(AddShroomsToInventory)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(AddCocaineAndFicusToInventory)}] throws exception: {exc.Message}");
             }
         }
 
@@ -484,7 +522,10 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(shroom.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {shroom.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo(
+                        HUDBigInfoMessage(AddedToInventoryMessage(count, shroom)),
+                        $"{ModName} Info",
+                        HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
@@ -504,7 +545,10 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(dropping.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {dropping.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo(
+                        HUDBigInfoMessage(AddedToInventoryMessage(count, dropping)),
+                        $"{ModName} Info",
+                        HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
@@ -524,7 +568,10 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(nut.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {nut.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo(
+                        HUDBigInfoMessage(AddedToInventoryMessage(count, nut)),
+                        $"{ModName} Info",
+                        HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
@@ -544,7 +591,10 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(flower.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {flower.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo(
+                       HUDBigInfoMessage(AddedToInventoryMessage(count, flower)),
+                       $"{ModName} Info",
+                       HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
@@ -564,7 +614,10 @@ namespace ModFarmer
                     {
                         player.AddItemToInventory(seed.m_ID.ToString());
                     }
-                    ShowHUDBigInfo($"Added {count} x {seed.GetNameToDisplayLocalized()} to inventory", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
+                    ShowHUDBigInfo(
+                       HUDBigInfoMessage(AddedToInventoryMessage(count, seed)),
+                       $"{ModName} Info",
+                       HUDInfoLogTextureType.Count.ToString());
                 }
             }
             catch (Exception exc)
