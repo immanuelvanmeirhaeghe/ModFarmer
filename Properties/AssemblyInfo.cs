@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("ModApi.ModFarmer")]
+[assembly: AssemblyTitle("ModAPI.ModFarmer")]
 [assembly: AssemblyDescription("ModFarmer is a mod for Green Hell that allows a player to get farming stuff.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Dragon Legion")]
-[assembly: AssemblyProduct("ModApi.ModFarmer")]
+[assembly: AssemblyProduct("ModAPI.ModFarmer")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.2.8")]
-[assembly: AssemblyFileVersion("1.0.2.8")]
+[assembly: AssemblyVersion("1.0.3.0")]
+[assembly: AssemblyFileVersion("1.0.3.0")]
