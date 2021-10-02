@@ -263,7 +263,7 @@ namespace ModFarmer
 
         private void UnlockFarmerItemsBox()
         {
-            if (IsModActiveForMultiplayer || IsModActiveForMultiplayer)
+            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
                 using (var farmeritemsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
