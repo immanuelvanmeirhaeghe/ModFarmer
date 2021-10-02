@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ModAPI.ModFarmer")]
-[assembly: AssemblyDescription("ModFarmer is a mod for Green Hell that allows a player to get farming materials (seeds, flowers, nuts, mushrooms and droppings) and some special items")]
+[assembly: AssemblyDescription("ModFarmer is a mod for Green Hell that allows a player to get farming materials (seeds, flowers, nuts, mushrooms and droppings) and some special items.  The weather can also be changed to raining or dry weather. Press Keypad5 (default) or the key configurable in ModAPI to open the main mod screen.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("[Dragon Legion]Immaanuel")]
 [assembly: AssemblyProduct("ModAPI.ModFarmer")]

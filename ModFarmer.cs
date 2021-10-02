@@ -13,8 +13,8 @@ namespace ModFarmer
     /// <summary>
     /// ModFarmer is a mod for Green Hell that allows a player
     /// to get farming materials (seeds, flowers, nuts, mushrooms and droppings)
-    /// and some special items
-    /// Press Keypad5 (default) or the key configurable in ModAPI to open the mod screen.
+    /// and some special items. The weather can also be changed to raining or dry weather.
+    /// Press Keypad5 (default) or the key configurable in ModAPI to open the main mod screen.
     /// </summary>
     public class ModFarmer : MonoBehaviour
     {
@@ -175,7 +175,6 @@ namespace ModFarmer
             LocalPlayer = Player.Get();
             LocalHUDManager = HUDManager.Get();
             LocalRainManager = RainManager.Get();
-            UnlockFarming();
         }
 
         private void InitSkinUI()
@@ -256,20 +255,28 @@ namespace ModFarmer
                 if (!IsMinimized)
                 {
                     ModOptionsBox();
-                    FarmerItemsBox();
+                    UnlockFarmerItemsBox();
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
-        private void FarmerItemsBox()
+        private void UnlockFarmerItemsBox()
         {
             if (IsModActiveForMultiplayer || IsModActiveForMultiplayer)
             {
                 using (var farmeritemsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUI.color = DefaultGuiColor;
-                    GUILayout.Label($"Farmer items: ", GUI.skin.label);
+                    GUILayout.Label($"Farmer tools and other items: ", GUI.skin.label);
+                    using (var unlocktoolsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label("Click to unlock farmer tools: ", GUI.skin.label);
+                        if (GUILayout.Button("Unlock tools", GUI.skin.button))
+                        {
+                            OnClickUnlockFarmerToolsButton();
+                        }
+                    }
 
                     SpecialsBox();
                     SeedsBox();
@@ -282,6 +289,18 @@ namespace ModFarmer
             else
             {
                 OnlyForSingleplayerOrWhenHostBox();
+            }
+        }
+
+        private void OnClickUnlockFarmerToolsButton()
+        {
+            try
+            {
+                UnlockFarming();
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(OnClickUnlockFarmerToolsButton));
             }
         }
 
