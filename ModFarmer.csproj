@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ModFarmer</RootNamespace>
     <AssemblyName>ModFarmer</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -348,6 +348,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions\PlayerExtended.cs" />
+    <Compile Include="Extensions\Enums.cs" />
     <Compile Include="ModFarmer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

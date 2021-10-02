@@ -1,22 +1,20 @@
 ﻿using Enums;
+using ModFarmer.Enums;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Xml;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace ModFarmer
 {
-    public enum MessageType
-    {
-        Info,
-        Warning,
-        Error
-    }
-
     /// <summary>
-    /// ModFarmer is a mod for Green Hell
-    /// that allows a player to get farming and some special food items.
-    /// Enable the mod UI by pressing Home.
+    /// ModFarmer is a mod for Green Hell that allows a player
+    /// to get farming materials (seeds, flowers, nuts, mushrooms and droppings)
+    /// and some special items
+    /// Press Keypad5 (default) or the key configurable in ModAPI to open the mod screen.
     /// </summary>
     public class ModFarmer : MonoBehaviour
     {
@@ -27,8 +25,11 @@ namespace ModFarmer
         private static readonly float ModScreenMaxWidth = 550f;
         private static readonly float ModScreenMinHeight = 50f;
         private static readonly float ModScreenMaxHeight = 200f;
-        private static float ModScreenStartPositionX { get; set; } = (Screen.width - ModScreenMaxWidth) % ModScreenTotalWidth;
-        private static float ModScreenStartPositionY { get; set; } = (Screen.height - ModScreenMaxHeight) % ModScreenTotalHeight;
+
+        private Color DefaultGuiColor = GUI.color;
+
+        private static float ModScreenStartPositionX { get; set; } = Screen.width / 3f;
+        private static float ModScreenStartPositionY { get; set; } = Screen.height / 3f;
         private static bool IsMinimized { get; set; } = false;
         private bool ShowUI = false;
 
@@ -38,6 +39,7 @@ namespace ModFarmer
         private static ItemsManager LocalItemsManager;
         private static HUDManager LocalHUDManager;
         private static Player LocalPlayer;
+        private static RainManager LocalRainManager;
 
         public static string CountSpecial { get; set; } = "1";
         public static string CountSeeds { get; set; } = "1";
@@ -49,11 +51,24 @@ namespace ModFarmer
         public bool IsModActiveForMultiplayer { get; private set; }
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
-        public List<ItemInfo> FarmingItemInfos = new List<ItemInfo>();
+        public static List<ItemInfo> FarmingItemInfos = new List<ItemInfo>();
         public bool FarmingUnlocked { get; set; } = false;
+        public bool IsRainEnabled { get; private set; } = false;
 
-        public static string AddedToInventoryMessage(int count, ItemInfo itemInfo) => $"Added {count} x {itemInfo.GetNameToDisplayLocalized()} to inventory.";
-        public static string PermissionChangedMessage(string permission) => $"Permission to use mods and cheats in multiplayer was {permission}!";
+        private void HandleException(Exception exc, string methodName)
+        {
+            string info = $"[{ModName}:{methodName}] throws exception:\n{exc.Message}";
+            ModAPI.Log.Write(info);
+            ShowHUDBigInfo(HUDBigInfoMessage(info, MessageType.Error, Color.red));
+        }
+        public static string AlreadyUnlockedFarmer()
+            => $"All farmer items were already unlocked!";
+        public static string OnlyForSinglePlayerOrHostMessage()
+            => $"Only available for single player or when host. Host can activate using ModManager.";
+        public static string AddedToInventoryMessage(int count, ItemInfo itemInfo)
+            => $"Added {count} x {itemInfo.GetNameToDisplayLocalized()} to inventory.";
+        public static string PermissionChangedMessage(string permission, string reason)
+            => $"Permission to use mods and cheats in multiplayer was {permission} because {reason}.";
         public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
             => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
 
@@ -74,27 +89,74 @@ namespace ModFarmer
             hudBigInfo.Show(true);
         }
 
+        public void ShowHUDInfoLog(string itemID, string localizedTextKey)
+        {
+            var localization = GreenHellGame.Instance.GetLocalization();
+            HUDMessages hUDMessages = (HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages));
+            hUDMessages.AddMessage(
+                $"{localization.Get(localizedTextKey)}  {localization.Get(itemID)}"
+                );
+        }
+
+        private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
+        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Keypad5;
+        private KeyCode GetConfigurableKey(string buttonId)
+        {
+            KeyCode configuredKeyCode = default;
+            string configuredKeybinding = string.Empty;
+
+            try
+            {
+                if (File.Exists(RuntimeConfigurationFile))
+                {
+                    using (var xmlReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
+                    {
+                        while (xmlReader.Read())
+                        {
+                            if (xmlReader["ID"] == ModName)
+                            {
+                                if (xmlReader.ReadToFollowing(nameof(Button)) && xmlReader["ID"] == buttonId)
+                                {
+                                    configuredKeybinding = xmlReader.ReadElementContentAsString();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                configuredKeybinding = configuredKeybinding?.Replace("NumPad", "Keypad").Replace("Oem", "");
+
+                configuredKeyCode = (KeyCode)(!string.IsNullOrEmpty(configuredKeybinding)
+                                                            ? Enum.Parse(typeof(KeyCode), configuredKeybinding)
+                                                            : GetType()?.GetProperty(buttonId)?.GetValue(this));
+                return configuredKeyCode;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(GetConfigurableKey));
+                configuredKeyCode = (KeyCode)(GetType()?.GetProperty(buttonId)?.GetValue(this));
+                return configuredKeyCode;
+            }
+        }
+
         public void Start()
         {
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
+            ModKeybindingId = GetConfigurableKey(nameof(ModKeybindingId));
         }
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
         {
+            string reason = optionValue ? "the game host allowed usage" : "the game host did not allow usage";
             IsModActiveForMultiplayer = optionValue;
+
             ShowHUDBigInfo(
-                          (optionValue ?
-                            HUDBigInfoMessage(PermissionChangedMessage($"granted"), MessageType.Info, Color.green)
-                            : HUDBigInfoMessage(PermissionChangedMessage($"revoked"), MessageType.Info, Color.yellow))
+                          optionValue ?
+                            HUDBigInfoMessage(PermissionChangedMessage($"granted", $"{reason}"), MessageType.Info, Color.green)
+                            : HUDBigInfoMessage(PermissionChangedMessage($"revoked", $"{reason}"), MessageType.Info, Color.yellow)
                             );
         }
 
-        private void HandleException(Exception exc, string methodName)
-        {
-            string info = $"[{ModName}:{methodName}] throws exception:\n{exc.Message}";
-            ModAPI.Log.Write(info);
-            ShowHUDBigInfo(HUDBigInfoMessage(info, MessageType.Error, Color.red));
-        }
 
         public ModFarmer()
         {
@@ -112,6 +174,7 @@ namespace ModFarmer
             LocalItemsManager = ItemsManager.Get();
             LocalPlayer = Player.Get();
             LocalHUDManager = HUDManager.Get();
+            LocalRainManager = RainManager.Get();
             UnlockFarming();
         }
 
@@ -140,7 +203,7 @@ namespace ModFarmer
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Home))
+            if (Input.GetKeyDown(ModKeybindingId))
             {
                 if (!ShowUI)
                 {
@@ -192,6 +255,22 @@ namespace ModFarmer
                 ScreenMenuBox();
                 if (!IsMinimized)
                 {
+                    ModOptionsBox();
+                    FarmerItemsBox();
+                }
+            }
+            GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
+        }
+
+        private void FarmerItemsBox()
+        {
+            if (IsModActiveForMultiplayer || IsModActiveForMultiplayer)
+            {
+                using (var farmeritemsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUI.color = DefaultGuiColor;
+                    GUILayout.Label($"Farmer items: ", GUI.skin.label);
+
                     SpecialsBox();
                     SeedsBox();
                     FlowersBox();
@@ -200,7 +279,123 @@ namespace ModFarmer
                     ShroomsBox();
                 }
             }
-            GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
+            else
+            {
+                OnlyForSingleplayerOrWhenHostBox();
+            }
+        }
+
+        private void ModOptionsBox()
+        {
+            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+            {
+                using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
+
+                    MultiplayerOptionBox();
+                    WeatherOptionBox();
+                }
+            }
+            else
+            {
+                OnlyForSingleplayerOrWhenHostBox();
+            }
+        }
+
+        private void OnlyForSingleplayerOrWhenHostBox()
+        {
+            using (var infoScope = new GUILayout.HorizontalScope(GUI.skin.box))
+            {
+                GUI.color = Color.yellow;
+                GUILayout.Label(OnlyForSinglePlayerOrHostMessage(), GUI.skin.label);
+            }
+        }
+
+        private void MultiplayerOptionBox()
+        {
+            try
+            {
+                using (var multiplayeroptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUILayout.Label("Multiplayer options: ", GUI.skin.label);
+                    string multiplayerOptionMessage = string.Empty;
+                    if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+                    {
+                        GUI.color = Color.green;
+                        if (IsModActiveForSingleplayer)
+                        {
+                            multiplayerOptionMessage = $"you are the game host";
+                        }
+                        if (IsModActiveForMultiplayer)
+                        {
+                            multiplayerOptionMessage = $"the game host allowed usage";
+                        }
+                        _ = GUILayout.Toggle(true, PermissionChangedMessage($"granted", multiplayerOptionMessage), GUI.skin.toggle);
+                    }
+                    else
+                    {
+                        GUI.color = Color.yellow;
+                        if (!IsModActiveForSingleplayer)
+                        {
+                            multiplayerOptionMessage = $"you are not the game host";
+                        }
+                        if (!IsModActiveForMultiplayer)
+                        {
+                            multiplayerOptionMessage = $"the game host did not allow usage";
+                        }
+                        _ = GUILayout.Toggle(false, PermissionChangedMessage($"revoked", $"{multiplayerOptionMessage}"), GUI.skin.toggle);
+                    }
+                }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(MultiplayerOptionBox));
+            }
+        }
+
+        private void WeatherOptionBox()
+        {
+            try
+            {
+                using (var weatheroptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUI.color = DefaultGuiColor;
+                    GUILayout.Label($"Weather options: ", GUI.skin.label);
+                    RainOption();
+                }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(WeatherOptionBox));
+            }
+        }
+
+        private void RainOption()
+        {
+            try
+            {
+                bool _tRainEnabled = IsRainEnabled;
+                IsRainEnabled = GUILayout.Toggle(IsRainEnabled, $"Switch between raining or dry weather", GUI.skin.toggle);
+                if (_tRainEnabled != IsRainEnabled)
+                {
+                    if (IsRainEnabled)
+                    {
+                        LocalRainManager.ScenarioStartRain();
+                    }
+                    else
+                    {
+                        LocalRainManager.ScenarioStopRain();
+                    }
+                    MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(IsRainEnabled);
+                    string rainOptionMessage = $"Rain { (IsRainEnabled ? "is falling" : "has stopped") }";
+                    ShowHUDBigInfo(HUDBigInfoMessage(rainOptionMessage, MessageType.Info, Color.green));
+                }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(RainOption));
+            }
         }
 
         private void ShroomsBox()
@@ -417,6 +612,7 @@ namespace ModFarmer
             {
                 if (!FarmingUnlocked)
                 {
+                    UnlockTools();
                     UnlockNuts();
                     UnlockFlowers();
                     UnlockDroppings();
@@ -429,14 +625,29 @@ namespace ModFarmer
                     {
                         LocalItemsManager.UnlockItemInNotepad(farmingItemInfo.m_ID);
                         LocalItemsManager.UnlockItemInfo(farmingItemInfo.m_ID.ToString());
+                        ShowHUDInfoLog(farmingItemInfo.m_ID.ToString(), "HUD_InfoLog_NewEntry");
                     }
-
                     FarmingUnlocked = true;
+                }
+                else
+                {
+                    ShowHUDBigInfo(HUDBigInfoMessage(AlreadyUnlockedFarmer(), MessageType.Warning, Color.yellow));
                 }
             }
             catch (Exception exc)
             {
                 HandleException(exc, nameof(UnlockFarming));
+            }
+        }
+
+        private void UnlockTools()
+        {
+            foreach (ItemInfo itemInfo in GetToolInfos())
+            {
+                if (!FarmingItemInfos.Contains(itemInfo))
+                {
+                    FarmingItemInfos.Add(itemInfo);
+                }
             }
         }
 
@@ -581,6 +792,13 @@ namespace ModFarmer
                 }
             }
             return isSeedInfos;
+        }
+
+        private List<ItemInfo> GetToolInfos()
+        {
+            List<ItemInfo> isToolInfos = LocalItemsManager.GetAllInfos().Values.Where(info => info.IsTool()).ToList();
+
+            return isToolInfos;
         }
 
         private List<ItemInfo> GetFlowerInfos() => new List<ItemInfo>
